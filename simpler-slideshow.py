@@ -1,5 +1,5 @@
 import os
-import math
+import sys
 import random
 from tkinter import *
 from PIL import Image, ImageTk, ImageGrab, ImageOps
@@ -55,15 +55,23 @@ def next_photo_rnd():
 		label_image.config(image=images[list_count.pop()])
 	root.after(delay_ms, next_photo_rnd)
 
+def is_number(num):
+	try:
+		float(num)
+		return True
+	except ValueError:
+		return False
+
 # Variables
 max_delay_ms = 30000
 min_delay_ms = 500
-delay_ms = 9000
+delay_ms = 4500
 isPause = False
 isFullscreen = True
 count = 0
 list_count = []
 num_of_img = 0
+window_bg = "black"
 
 path = "./Photos/"
 valid_formats = ("JPEG", "PNG", "TGA", "WEBP", "BMP", "PSD") # "python3 -m PIL" to list all supported formats or run "PIL.features.pilinfo()"
@@ -72,29 +80,49 @@ images = []
 
 # Message Info/Prompt
 print("\n Valid Formats: " + str(valid_formats))
-print(" Delay: " + str(delay_ms) + "ms | Interval of 500ms")
-print("\n ****************** CONTROLS ******************")
-print(" **********************************************")
+print("\n ------------------ CONTROLS ------------------")
 print("     SPACE - pause slideshow")
-print("  LEFT_ARW - slow down slideshow | min=" + str(min_delay_ms) + "ms")
-print("  LEFT_ARW - speed up slideshow  | max=" + str(max_delay_ms) + "ms")
+print("  LEFT_ARW - slow down slideshow | min=" + str(round(min_delay_ms/1000,1)) + " sec")
+print("  LEFT_ARW - speed up slideshow  | max=" + str(round(max_delay_ms/1000,1)) + " sec")
 print("         F - fullscreen")
 print("       ESC - exit slideshow")
-print(" **********************************************")
+print(" ----------------------------------------------")
 
-print("\n All photos will automatically be resized to fit the screen.")
-print(" Cropping the photo make it fit perfectly leaving no empty spaces at the cost of cutting parts of the photo.\n")
-crop_img = input(" Would you like the photos to be Cropped? [y/n] ").lower() in yes_ans
+delay_input = input("\n Input delay/speed in seconds: ")
+
+# checks if user inputs a valid number
+# converts sec to ms and rounds down to nearest full second or half a second (0.5,1,1.5,etc)
+if is_number(delay_input):
+	# round one dec place and convert sec to ms 
+	delay_input = int(round(float(delay_input),1) * 1000)
+	
+	if delay_input >= max_delay_ms:
+		delay_ms = max_delay_ms
+	elif delay_input <= min_delay_ms:
+		delay_ms = min_delay_ms
+	else:
+		rem = delay_input % 500
+		delay_ms = delay_input-rem if rem else delay_input
+
+print(" DELAY = " + str(round(delay_ms/1000, 1)) +" sec")
+
+crop_img = input("\n Would you like the photos be Cropped to fit? [y/n] ").lower() in yes_ans
 randomize_img = input(" Would you like photo sequence to be Randomized? [y/n] ").lower() in yes_ans
+
+if not crop_img:
+	if input(" Black or white Background? [b/w] ").lower() == 'w':
+		window_bg = "white"
+	else:
+		window_bg = "black"
 
 # Initialize a display window
 root = Tk()
 root.title("Simpler SlideShow")
 root.attributes('-fullscreen', True)
-root.config(cursor="none")
+root.config(cursor="none", bg=window_bg)
 
 # creates/pack label widget onto the window "root"
-label_image = Label(root, anchor=CENTER)
+label_image = Label(root, anchor=CENTER, borderwidth="0")
 label_image.pack()
 
 # Binding keys to an event
@@ -108,11 +136,14 @@ screen_size = ImageGrab.grab().size
 print("\n ***** Detected Screen Size: " + str(screen_size) + " *****")
 
 # Get the list of all files and directories
-file_names = os.listdir(path)
+try:
+	file_names = os.listdir(path)
+except Exception as e:
+	print(" [ERROR] -", e)
+	print(" Terminating Program...")
+	sys.exit()
 
 print(" ***** Detected " + str(len(file_names)) + " file(s) in " + path + " *****\n")
-print(" PHOTO RESIZING = ENABLED")
-print(" PHOTO CROPPING = " + ("ENABLED\n" if crop_img else "DISABLED\n" ))
 
 for file_name in file_names:
 	# using "x=file_name.split('.')[-1]" and if(x in ['jpg', 'png', ...]) would be slightly more efficient than try/except
@@ -124,11 +155,11 @@ for file_name in file_names:
 		isTransposed = False if img.getexif().get(0x0112) == 1 else True # 2-8 means the image has a orientation tag that programs apply when viewing
 
 		# I found checking for orientation tag saves a couple seconds rather than applying exif_transpose on all images and returning a copy
-		if(isTransposed):
+		if isTransposed:
 			img = ImageOps.exif_transpose(img) #  applies orientation transpose
 
 		# Reize and Crops OR Resize only
-		if(crop_img):
+		if crop_img:
 			img = ImageOps.fit(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
 		else:
 			img = ImageOps.contain(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
@@ -146,9 +177,12 @@ print("\n ***** " + str(num_of_img) + " photo(s) loaded *****\n")
 if num_of_img <= 1:
 	print(" Not enough photos found, exiting...")
 	root.destroy()
-	exit()
+	sys.exit()
 
-print(" PHOTO RANDOMIZATION = " + ("ENABLED\n" if randomize_img else "DISABLED\n" ))
+print(" RESIZING = ENABLED")
+print(" CROPPING = " + ("ENABLED" if crop_img else "DISABLED" ))
+print(" RANDOMIZATION = " + ("ENABLED" if randomize_img else "DISABLED" ))
+print(" DELAY = " + str(round(delay_ms/1000, 1)) +" sec\n")
 
 # Chooses between if the slideshow will randomly display photos or in the sequience it was loaded in
 next_photo_rnd() if randomize_img else next_photo_order()

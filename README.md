@@ -1,5 +1,5 @@
 <div align="center">
-<h1>📸 The Simpler SlideShow 📷</h1>
+<h1>📸 Simpler SlideShow 📷</h1>
 </div>
 
 ## Index
@@ -8,6 +8,7 @@
 - [Features](#features)
 	- [Photo Transformation](#photo-transformation)
 	- [Photo Sequence](#photo-sequence)
+	- [Background Color](#background-color)
 - [Download](#download)
 
 ## Origins
@@ -50,6 +51,15 @@ However, there are photo transformation and photo display sequence options that 
 
 - **Randomized:** This will randomize the order the photos are displayed. Each photo will be displayed once in a random order till it cycles back again. No photos will be shown more than another during a single loop. For example, if there were 5 photos loaded, then the sequence may look like: `[4,2,5,1,3] -> [1,2,5,3,4] -> [3,4,2,1,5] -> etc`
 
+### Background Color
+
+You are able to change the windows background color. It is only useful when your photos don't find exactly on the screen and there is empty spaces. The empty space is the "background color"
+
+Current Supported Colors:
+| Color | Description |
+| :---: | :---: |
+| `black` | ⚫ |
+| `white` | ⚪ |
 
 ## Download
 Go to ![releases](https://github.com/AnthonyN3/simpler-slideshow/releases)
