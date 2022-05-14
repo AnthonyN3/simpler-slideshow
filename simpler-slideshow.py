@@ -22,15 +22,17 @@ def pause_slideshow(event=None):
 		print("Paused")
 
 def speedup_slideshow(event=None):
-	global delay_ms
+	global delay_ms, task
 	if(delay_ms > min_delay_ms):
 		delay_ms = delay_ms - 500
+		reset_timer()
 	print("delay: " + str(delay_ms) + "ms")
 
 def slowdown_slideshow(event=None):
 	global delay_ms
 	if(delay_ms < max_delay_ms):
 		delay_ms = delay_ms + 500
+		reset_timer()
 	print("delay: " + str(delay_ms) + "ms")
 
 def generate_list(size):
@@ -38,22 +40,33 @@ def generate_list(size):
 	random.shuffle(li)
 	return li
 
+def start_slideshow():
+	next_photo_rnd() if randomize_img else next_photo_order()
+
+def reset_timer():
+	global task
+	root.after_cancel(task)
+	if randomize_img:
+		task = root.after(delay_ms, next_photo_rnd)
+	else:
+		task = root.after(delay_ms, next_photo_order)
+
 def next_photo_order():
-	global count
+	global count, task
 	if count == (num_of_img):
 		count = 0
 	if(not isPause):
 		label_image.config(image=images[count])
 		count = count + 1
-	root.after(delay_ms, next_photo_order)
+	task = root.after(delay_ms, next_photo_order)
 
 def next_photo_rnd():
-	global list_count
+	global list_count, task
 	if not list_count:
 		list_count = generate_list(num_of_img)
 	if(not isPause):
 		label_image.config(image=images[list_count.pop()])
-	root.after(delay_ms, next_photo_rnd)
+	task = root.after(delay_ms, next_photo_rnd)
 
 def is_number(num):
 	try:
@@ -184,6 +197,5 @@ print(" CROPPING = " + ("ENABLED" if crop_img else "DISABLED" ))
 print(" RANDOMIZATION = " + ("ENABLED" if randomize_img else "DISABLED" ))
 print(" DELAY = " + str(round(delay_ms/1000, 1)) +" sec\n")
 
-# Chooses between if the slideshow will randomly display photos or in the sequience it was loaded in
-next_photo_rnd() if randomize_img else next_photo_order()
+start_slideshow()
 root.mainloop() # tkinter runs event loop and halts on this line till root window is closed. Also, allows for listening to events 
