@@ -1,3 +1,4 @@
+from ctypes.wintypes import HGLOBAL
 import os
 import sys
 import random
@@ -35,6 +36,15 @@ def slowdown_slideshow(event=None):
 		reset_timer()
 	print("delay: " + str(delay_ms) + "ms")
 
+def display_text(text_value):
+	global text_task
+	root.after_cancel(text_task)
+	label_image.config(text=text_value)
+	text_task = root.after(2000, remove_text)
+
+def remove_text():
+	label_image.config(text="")
+
 def generate_list(size):
 	li = list(range(size))
 	random.shuffle(li)
@@ -59,6 +69,7 @@ def next_photo_order():
 		label_image.config(image=images[count])
 		count = count + 1
 	task = root.after(delay_ms, next_photo_order)
+	print(task,type(task))
 
 def next_photo_rnd():
 	global list_count, task
@@ -135,7 +146,7 @@ root.attributes('-fullscreen', True)
 root.config(cursor="none", bg=window_bg)
 
 # creates/pack label widget onto the window "root"
-label_image = Label(root, anchor=CENTER, borderwidth="0")
+label_image = Label(root, anchor=CENTER, borderwidth="0", compound=CENTER, font=('Arial Black',50), fg='#eb0505')
 label_image.pack()
 
 # Binding keys to an event
