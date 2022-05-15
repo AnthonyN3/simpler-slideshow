@@ -1,3 +1,4 @@
+from glob import glob
 import os
 import sys
 import random
@@ -12,16 +13,19 @@ def fullscreen(event=None):
 	root.attributes('-fullscreen', not isFullscreen)
 	isFullscreen = not isFullscreen
 
+# possible race condition? after/after_cancel
 def pause_slideshow(event=None):
 	global isPause
 	if isPause:
 		isPause = False
 		label_image.config(text="")
+		start_slideshow()
 		print("UnPaused")
 	else:
 		isPause = True
 		if "text_task_id" in globals():
 			root.after_cancel(text_task_id)
+		stop_slideshow()
 		label_image.config(text="PAUSED")
 		print("Paused")
 
@@ -61,6 +65,10 @@ def generate_list(size):
 def start_slideshow():
 	next_photo_rnd() if randomize_img else next_photo_order()
 
+def stop_slideshow():
+	if "photo_task_id" in globals():
+		root.after_cancel(photo_task_id)
+
 def reset_timer():
 	global photo_task_id
 	root.after_cancel(photo_task_id)
@@ -73,17 +81,15 @@ def next_photo_order():
 	global count, photo_task_id
 	if count == (num_of_img):
 		count = 0
-	if(not isPause):
-		label_image.config(image=images[count])
-		count = count + 1
+	label_image.config(image=images[count])
+	count = count + 1
 	photo_task_id = root.after(delay_ms, next_photo_order)
 
 def next_photo_rnd():
 	global list_count, photo_task_id
 	if not list_count:
 		list_count = generate_list(num_of_img)
-	if(not isPause):
-		label_image.config(image=images[list_count.pop()])
+	label_image.config(image=images[list_count.pop()])
 	photo_task_id = root.after(delay_ms, next_photo_rnd)
 
 def is_number(num):
