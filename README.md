@@ -62,7 +62,7 @@ Current Supported Colors:
 | `white` | ⚪ |
 
 ## Download
-Go to ![releases](https://github.com/AnthonyN3/simpler-slideshow/releases)
+Go to [releases](https://github.com/AnthonyN3/simpler-slideshow/releases)
 
 Note: Since this is such a barebone/simple tool, if you have python and the pillow module installed (+ supported version)
 then you can just run the source code and alter it to your desire.

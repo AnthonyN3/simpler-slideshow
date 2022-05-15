@@ -20,24 +20,24 @@ def pause_slideshow(event=None):
 		print("UnPaused")
 	else:
 		isPause = True
-		if "text_task" in globals():
-			root.after_cancel(text_task)
+		if "text_task_id" in globals():
+			root.after_cancel(text_task_id)
 		label_image.config(text="PAUSED")
 		print("Paused")
 
 def display_speed(speed_ms):
-	global text_task
-	if "text_task" in globals():
-		root.after_cancel(text_task)
+	global text_task_id
+	if "text_task_id" in globals():
+		root.after_cancel(text_task_id)
 	label_image.config(text="\n\n\n\n\n" + ms_to_sec(speed_ms) + " seconds")
-	text_task = root.after(1000, remove_text)
+	text_task_id = root.after(1000, remove_text)
 
 def remove_text():
 	label_image.config(text="")
 
 def speedup_slideshow(event=None):
 	if not isPause:
-		global delay_ms, task
+		global delay_ms
 		if(delay_ms > min_delay_ms):
 			delay_ms = delay_ms - 500
 			display_speed(delay_ms)
@@ -62,29 +62,29 @@ def start_slideshow():
 	next_photo_rnd() if randomize_img else next_photo_order()
 
 def reset_timer():
-	global task
-	root.after_cancel(task)
+	global photo_task_id
+	root.after_cancel(photo_task_id)
 	if randomize_img:
-		task = root.after(delay_ms, next_photo_rnd)
+		photo_task_id = root.after(delay_ms, next_photo_rnd)
 	else:
-		task = root.after(delay_ms, next_photo_order)
+		photo_task_id = root.after(delay_ms, next_photo_order)
 
 def next_photo_order():
-	global count, task
+	global count, photo_task_id
 	if count == (num_of_img):
 		count = 0
 	if(not isPause):
 		label_image.config(image=images[count])
 		count = count + 1
-	task = root.after(delay_ms, next_photo_order)
+	photo_task_id = root.after(delay_ms, next_photo_order)
 
 def next_photo_rnd():
-	global list_count, task
+	global list_count, photo_task_id
 	if not list_count:
 		list_count = generate_list(num_of_img)
 	if(not isPause):
 		label_image.config(image=images[list_count.pop()])
-	task = root.after(delay_ms, next_photo_rnd)
+	photo_task_id = root.after(delay_ms, next_photo_rnd)
 
 def is_number(num):
 	try:
@@ -116,11 +116,11 @@ images = []
 # Message Info/Prompt
 print("\n Valid Formats: " + str(valid_formats))
 print("\n ------------------ CONTROLS ------------------")
-print("     SPACE - pause slideshow")
-print("  LEFT_ARW - slow down slideshow | min=" + ms_to_sec(min_delay_ms) + " sec")
-print("  LEFT_ARW - speed up slideshow  | max=" + ms_to_sec(max_delay_ms) + " sec")
+print("     SPACE - pause")
+print("  LEFT_ARW - slow down | min=" + ms_to_sec(min_delay_ms) + " sec")
+print("  LEFT_ARW - speed up  | max=" + ms_to_sec(max_delay_ms) + " sec")
 print("         F - fullscreen")
-print("       ESC - exit slideshow")
+print("       ESC - exit")
 print(" ----------------------------------------------")
 
 delay_input = input("\n Input slideshow speed in seconds: ")
