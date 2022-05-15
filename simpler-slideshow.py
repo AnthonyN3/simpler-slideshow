@@ -1,4 +1,3 @@
-from ctypes.wintypes import HGLOBAL
 import os
 import sys
 import random
@@ -17,33 +16,42 @@ def pause_slideshow(event=None):
 	global isPause
 	if isPause:
 		isPause = False
+		label_image.config(text="")
 		print("UnPaused")
 	else:
 		isPause = True
+		if "text_task" in globals():
+			root.after_cancel(text_task)
+		label_image.config(text="PAUSED")
 		print("Paused")
 
-def speedup_slideshow(event=None):
-	global delay_ms, task
-	if(delay_ms > min_delay_ms):
-		delay_ms = delay_ms - 500
-		reset_timer()
-	print("delay: " + str(delay_ms) + "ms")
-
-def slowdown_slideshow(event=None):
-	global delay_ms
-	if(delay_ms < max_delay_ms):
-		delay_ms = delay_ms + 500
-		reset_timer()
-	print("delay: " + str(delay_ms) + "ms")
-
-def display_text(text_value):
+def display_speed(speed_ms):
 	global text_task
-	root.after_cancel(text_task)
-	label_image.config(text=text_value)
-	text_task = root.after(2000, remove_text)
+	if "text_task" in globals():
+		root.after_cancel(text_task)
+	label_image.config(text="\n\n\n\n\n" + ms_to_sec(speed_ms) + " seconds")
+	text_task = root.after(1000, remove_text)
 
 def remove_text():
 	label_image.config(text="")
+
+def speedup_slideshow(event=None):
+	if not isPause:
+		global delay_ms, task
+		if(delay_ms > min_delay_ms):
+			delay_ms = delay_ms - 500
+			display_speed(delay_ms)
+			reset_timer()
+		print("delay: " + str(delay_ms) + "ms")
+
+def slowdown_slideshow(event=None):
+	if not isPause:
+		global delay_ms
+		if(delay_ms < max_delay_ms):
+			delay_ms = delay_ms + 500
+			display_speed(delay_ms)
+			reset_timer()
+		print("delay: " + str(delay_ms) + "ms")
 
 def generate_list(size):
 	li = list(range(size))
@@ -69,7 +77,6 @@ def next_photo_order():
 		label_image.config(image=images[count])
 		count = count + 1
 	task = root.after(delay_ms, next_photo_order)
-	print(task,type(task))
 
 def next_photo_rnd():
 	global list_count, task
@@ -85,6 +92,10 @@ def is_number(num):
 		return True
 	except ValueError:
 		return False
+
+# Rounded to nearest decimal place
+def ms_to_sec(ms):
+	return str(round(ms/1000,1))
 
 # Variables
 max_delay_ms = 30000
@@ -106,13 +117,13 @@ images = []
 print("\n Valid Formats: " + str(valid_formats))
 print("\n ------------------ CONTROLS ------------------")
 print("     SPACE - pause slideshow")
-print("  LEFT_ARW - slow down slideshow | min=" + str(round(min_delay_ms/1000,1)) + " sec")
-print("  LEFT_ARW - speed up slideshow  | max=" + str(round(max_delay_ms/1000,1)) + " sec")
+print("  LEFT_ARW - slow down slideshow | min=" + ms_to_sec(min_delay_ms) + " sec")
+print("  LEFT_ARW - speed up slideshow  | max=" + ms_to_sec(max_delay_ms) + " sec")
 print("         F - fullscreen")
 print("       ESC - exit slideshow")
 print(" ----------------------------------------------")
 
-delay_input = input("\n Input delay/speed in seconds: ")
+delay_input = input("\n Input slideshow speed in seconds: ")
 
 # checks if user inputs a valid number
 # converts sec to ms and rounds down to nearest full second or half a second (0.5,1,1.5,etc)
@@ -128,7 +139,7 @@ if is_number(delay_input):
 		rem = delay_input % 500
 		delay_ms = delay_input-rem if rem else delay_input
 
-print(" DELAY = " + str(round(delay_ms/1000, 1)) +" sec")
+print(" SPEED: " + str(round(delay_ms/1000, 1)) +" sec")
 
 crop_img = input("\n Would you like the photos be Cropped to fit? [y/n] ").lower() in yes_ans
 randomize_img = input(" Would you like photo sequence to be Randomized? [y/n] ").lower() in yes_ans
@@ -146,7 +157,7 @@ root.attributes('-fullscreen', True)
 root.config(cursor="none", bg=window_bg)
 
 # creates/pack label widget onto the window "root"
-label_image = Label(root, anchor=CENTER, borderwidth="0", compound=CENTER, font=('Arial Black',50), fg='#eb0505')
+label_image = Label(root, anchor=CENTER, borderwidth="0", compound=CENTER, font=('Arial Black',50), fg='#ef0000')
 label_image.pack()
 
 # Binding keys to an event
