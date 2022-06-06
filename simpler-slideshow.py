@@ -1,6 +1,8 @@
-from glob import glob
 import os
 import sys
+import getopt
+import platform
+import re
 import random
 from tkinter import *
 from PIL import Image, ImageTk, ImageGrab, ImageOps
@@ -63,7 +65,7 @@ def generate_list(size):
 	return li
 
 def start_slideshow():
-	next_photo_rnd() if randomize_img else next_photo_order()
+	next_photo_rnd() if isRandomize else next_photo_order()
 
 def stop_slideshow():
 	if "photo_task_id" in globals():
@@ -72,7 +74,7 @@ def stop_slideshow():
 def reset_timer():
 	global photo_task_id
 	root.after_cancel(photo_task_id)
-	if randomize_img:
+	if isRandomize:
 		photo_task_id = root.after(delay_ms, next_photo_rnd)
 	else:
 		photo_task_id = root.after(delay_ms, next_photo_order)
@@ -103,6 +105,36 @@ def is_number(num):
 def ms_to_sec(ms):
 	return str(round(ms/1000,1))
 
+def print_controls():
+	print("\n ------------------ CONTROLS ------------------")
+	print("     SPACE - pause")
+	print("  LEFT_ARW - slow down | min=" + ms_to_sec(min_delay_ms) + " sec")
+	print("  LEFT_ARW - speed up  | max=" + ms_to_sec(max_delay_ms) + " sec")
+	print("         F - fullscreen")
+	print("       ESC - exit")
+	print(" ----------------------------------------------")
+
+def print_help():
+	print("Usage: simpler-slideshow [OPTIONS]")
+	print("\nOptions:")
+	print("  General Options:")
+	print("    -f, --fit                  Resize all photos to fit the screen\n\
+                               while keeping the photos aspect ratio")
+	print("    -c, --crop                 Crops & resize all photos to fit\n\
+                               the screen leaving no empty spaces\n\
+                               on the screen")
+	print("    -r, --randomize            Displays the photos in a random order")
+	print("    -o, --order                Displays the photos in the order they\n\
+                               were loaded in")
+	print("    -b, --bg-color COLOR       Specify background color: \"black\",\n\
+                               \"white\", \"red\", \"green\", \"blue\",\n\
+                               \"cyan\", \"yellow\", \"magenta\" or \n\
+                               use hex colors ie: \"FF0000\"")
+	print("    -s, --speed SECONDS        Specify slideshow speed in seconds\n\
+                               Will round to nearest half or full\n\
+                               second. ie: 1.0, 1.5, 2.0, 2.5, etc")
+	print("\nNote: --fit and --crop can't be used together\n      --randomize and --order can't be used together")
+
 # Variables
 max_delay_ms = 30000
 min_delay_ms = 500
@@ -112,58 +144,135 @@ isFullscreen = True
 count = 0
 list_count = []
 num_of_img = 0
-window_bg = "black"
-
 path = "./Photos/"
 valid_formats = ("JPEG", "PNG", "TGA", "WEBP", "BMP", "PSD") # "python3 -m PIL" to list all supported formats or run "PIL.features.pilinfo()"
-yes_ans = ["yes", "y", "ya", "ye", "yee", "yup", "yuh", "yeah", "okay", "ok", "yep", "yea", "alright", "roger", "oui", "sure"] # lol
+yes_ans = ("yes", "y", "ya", "ye", "yee", "yup", "yuh", "yeah", "okay", "ok", "yep", "yea", "alright", "roger", "oui", "sure") # lol
+color_list = ("white", "black", "red", "green", "blue", "cyan", "yellow", "magenta")
 images = []
 
-# Message Info/Prompt
-print("\n Valid Formats: " + str(valid_formats))
-print("\n ------------------ CONTROLS ------------------")
-print("     SPACE - pause")
-print("  LEFT_ARW - slow down | min=" + ms_to_sec(min_delay_ms) + " sec")
-print("  LEFT_ARW - speed up  | max=" + ms_to_sec(max_delay_ms) + " sec")
-print("         F - fullscreen")
-print("       ESC - exit")
-print(" ----------------------------------------------")
+# User inputs
+delay_input = None
+isCropped = None
+isRandomize = None
+bg_color = None
 
-delay_input = input("\n Input slideshow speed in seconds: ")
+args = sys.argv[1:]
 
-# checks if user inputs a valid number
-# converts sec to ms and rounds down to nearest full second or half a second (0.5,1,1.5,etc)
-if is_number(delay_input):
-	# round one dec place and convert sec to ms 
-	delay_input = int(round(float(delay_input),1) * 1000)
-	
-	if delay_input >= max_delay_ms:
-		delay_ms = max_delay_ms
-	elif delay_input <= min_delay_ms:
-		delay_ms = min_delay_ms
+if args:
+	try:
+		option_value, arg_val = getopt.getopt(
+			args, 
+			"hrocfb:s:", 
+			["help","randomize", "order", "crop", "fit", "bg-color=", "speed="]
+			)
+
+		if arg_val:
+			print("Illegal arguments:", arg_val)
+			print("Type simpler-slideshow --help to see a list of options")
+			sys.exit()
+
+		i = [x[0] for x in option_value]
+		if ("-c" in i or "--crop" in i) and ("-f" in i or "--fit" in i):
+			print("Cannot use option \"--crop\" and \"--fit\" together")
+			print("Type simpler-slideshow --help to see a list of options")
+			sys.exit()
+		if ("-r" in i or "--randomize" in i) and ("-o" in i or "--order" in i):
+			print("Cannot use option \"--randomize\" and \"--order\" together")
+			print("Type simpler-slideshow --help to see a list of options")
+			sys.exit()
+
+		for opt, val in option_value:
+			if opt in ("-h", "--help"):
+				print_help()
+				sys.exit()
+			elif opt in ("-r", "--randomize"):
+				isRandomize = True
+			elif opt in ("-o", "--order"):
+				isRandomize = False
+			elif opt in ("-c", "--crop"):
+				isCropped = True
+			elif opt in ("-f", "--fit"):
+				isCropped = False
+			elif opt in ("-b", "--bg-color"):
+				if val.lower() in color_list:
+					bg_color = val.lower()
+				elif re.search("^([0-9a-fA-F]{3}){1,2}$", val):
+					bg_color = '#' + val
+				else:
+					print("Invalid background color specified for --bg_color/-b")
+					print("Type simpler-slideshow --help to see a list of options")
+					sys.exit()
+			elif opt in ("-s", "--speed"):
+				if is_number(val):
+					delay_input = int(round(float(val),1) * 1000) #convert second to ms
+					if delay_input > max_delay_ms:
+						print(f"Speed cannot be over {ms_to_sec(max_delay_ms)} seconds")
+						sys.exit()
+					elif delay_input < min_delay_ms:
+						print(f"Speed cannot be under {ms_to_sec(min_delay_ms)} seconds")
+						sys.exit()
+					else:
+						delay_ms = delay_input
+				else:
+					print("invalid value for --speed/-s")
+					print("Type simpler-slideshow --help to see a list of options")
+					sys.exit()		
+	except getopt.error as e:
+		print(e)
+		if(platform.system == "Windows"):
+			print("\nUsage: simpler-slideshow.exe [OPTIONS]")
+			print("Type simpler-slideshow --help to see a list of options")
+		sys.exit()
+
+print_controls()
+
+if delay_input == None:
+	delay_input = input("\n Input slideshow speed in seconds: ")
+
+	# converts sec to ms and rounds down to nearest full second or half a second (0.5,1,1.5,etc)
+	if is_number(delay_input):
+		# round one dec place and convert sec to ms 
+		delay_input = int(round(float(delay_input),1) * 1000)
+		
+		if delay_input >= max_delay_ms:
+			delay_ms = max_delay_ms
+		elif delay_input <= min_delay_ms:
+			delay_ms = min_delay_ms
+		else:
+			rem = delay_input % 500
+			delay_ms = delay_input-rem if rem else delay_input
+
+	print(" SPEED: " + str(round(delay_ms/1000, 1)) +" sec")
+
+if isCropped == None:
+	isCropped = input("\n Would you like the photos to be Cropped to fit? [y/n] ").lower() in yes_ans
+	print(" CROP:", isCropped)
+if isRandomize == None:
+	isRandomize = input("\n Would you like photo sequence to be Randomized? [y/n] ").lower() in yes_ans
+	print(" RANDOMIZE:", isRandomize)
+if not isCropped and bg_color == None:
+	bg_color_input = input(f"\n {color_list} | or hex color (ex. #FF22AA)\n Input background color: ").lower()
+	if  (bg_color_input in color_list) or (re.search("^#([0-9a-fA-F]{3}){1,2}$", bg_color_input)):
+		bg_color = bg_color_input
 	else:
-		rem = delay_input % 500
-		delay_ms = delay_input-rem if rem else delay_input
-
-print(" SPEED: " + str(round(delay_ms/1000, 1)) +" sec")
-
-crop_img = input("\n Would you like the photos be Cropped to fit? [y/n] ").lower() in yes_ans
-randomize_img = input(" Would you like photo sequence to be Randomized? [y/n] ").lower() in yes_ans
-
-if not crop_img:
-	if input(" Black or white Background? [b/w] ").lower() == 'w':
-		window_bg = "white"
-	else:
-		window_bg = "black"
+		bg_color = "black"
 
 # Initialize a display window
 root = Tk()
 root.title("Simpler SlideShow")
 root.attributes('-fullscreen', True)
-root.config(cursor="none", bg=window_bg)
+root.config(cursor="none", bg=bg_color)
+root.focus_force()
 
 # creates/pack label widget onto the window "root"
-label_image = Label(root, anchor=CENTER, borderwidth="0", compound=CENTER, font=('Arial Black',50), fg='#ef0000')
+label_image = Label(
+	root,
+	anchor=CENTER,
+	borderwidth="0",
+	compound=CENTER,
+	font=('Arial' if platform.system() == 'Windows' else 'Liberation Mono',50),
+	fg='#ef0000'
+	)
 label_image.pack()
 
 # Binding keys to an event
@@ -200,7 +309,7 @@ for file_name in file_names:
 			img = ImageOps.exif_transpose(img) #  applies orientation transpose
 
 		# Reize and Crops OR Resize only
-		if crop_img:
+		if isCropped:
 			img = ImageOps.fit(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
 		else:
 			img = ImageOps.contain(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
@@ -221,8 +330,8 @@ if num_of_img <= 1:
 	sys.exit()
 
 print(" RESIZING = ENABLED")
-print(" CROPPING = " + ("ENABLED" if crop_img else "DISABLED" ))
-print(" RANDOMIZATION = " + ("ENABLED" if randomize_img else "DISABLED" ))
+print(" CROPPING = " + ("ENABLED" if isCropped else "DISABLED" ))
+print(" RANDOMIZATION = " + ("ENABLED" if isRandomize else "DISABLED" ))
 print(" DELAY = " + str(round(delay_ms/1000, 1)) +" sec\n")
 
 start_slideshow()
