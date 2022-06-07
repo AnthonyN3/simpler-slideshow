@@ -1,9 +1,5 @@
-import os
-import sys
-import getopt
-import platform
-import re
-import random
+import sys, os, platform
+import getopt, re, random
 from tkinter import *
 from PIL import Image, ImageTk, ImageGrab, ImageOps
 
@@ -22,14 +18,12 @@ def pause_slideshow(event=None):
 		isPause = False
 		label_image.config(text="")
 		start_slideshow()
-		print("UnPaused")
 	else:
 		isPause = True
 		if "text_task_id" in globals():
 			root.after_cancel(text_task_id)
 		stop_slideshow()
 		label_image.config(text="PAUSED")
-		print("Paused")
 
 def display_speed(speed_ms):
 	global text_task_id
@@ -48,7 +42,6 @@ def speedup_slideshow(event=None):
 			delay_ms = delay_ms - 500
 			display_speed(delay_ms)
 			reset_timer()
-		print("delay: " + str(delay_ms) + "ms")
 
 def slowdown_slideshow(event=None):
 	if not isPause:
@@ -57,7 +50,6 @@ def slowdown_slideshow(event=None):
 			delay_ms = delay_ms + 500
 			display_speed(delay_ms)
 			reset_timer()
-		print("delay: " + str(delay_ms) + "ms")
 
 def generate_list(size):
 	li = list(range(size))
@@ -129,7 +121,7 @@ def print_help():
 	print("    -b, --bg-color COLOR       Specify background color: \"black\",\n\
                                \"white\", \"red\", \"green\", \"blue\",\n\
                                \"cyan\", \"yellow\", \"magenta\" or \n\
-                               use hex colors ie: \"FF0000\"")
+                               use hex colors ie: \"FF0000\". Omit the #")
 	print("    -s, --speed SECONDS        Specify slideshow speed in seconds\n\
                                Will round to nearest half or full\n\
                                second. ie: 1.0, 1.5, 2.0, 2.5, etc")
@@ -158,6 +150,7 @@ bg_color = None
 
 args = sys.argv[1:]
 
+# checks if options are used and apply them accordingly
 if args:
 	try:
 		option_value, arg_val = getopt.getopt(
@@ -168,17 +161,18 @@ if args:
 
 		if arg_val:
 			print("Illegal arguments:", arg_val)
-			print("Type simpler-slideshow --help to see a list of options")
+			print(f"Type {sys.argv[0]} --help to see a list of options")
 			sys.exit()
 
+		# Error message if certain options are used together
 		i = [x[0] for x in option_value]
 		if ("-c" in i or "--crop" in i) and ("-f" in i or "--fit" in i):
 			print("Cannot use option \"--crop\" and \"--fit\" together")
-			print("Type simpler-slideshow --help to see a list of options")
+			print(f"Type {sys.argv[0]} --help to see a list of options")
 			sys.exit()
 		if ("-r" in i or "--randomize" in i) and ("-o" in i or "--order" in i):
 			print("Cannot use option \"--randomize\" and \"--order\" together")
-			print("Type simpler-slideshow --help to see a list of options")
+			print(f"Type {sys.argv[0]} --help to see a list of options")
 			sys.exit()
 
 		for opt, val in option_value:
@@ -200,7 +194,7 @@ if args:
 					bg_color = '#' + val
 				else:
 					print("Invalid background color specified for --bg_color/-b")
-					print("Type simpler-slideshow --help to see a list of options")
+					print(f"Type {sys.argv[0]} --help to see a list of options")
 					sys.exit()
 			elif opt in ("-s", "--speed"):
 				if is_number(val):
@@ -215,13 +209,12 @@ if args:
 						delay_ms = delay_input
 				else:
 					print("invalid value for --speed/-s")
-					print("Type simpler-slideshow --help to see a list of options")
+					print(f"Type {sys.argv[0]} --help to see a list of options")
 					sys.exit()		
 	except getopt.error as e:
 		print(e)
-		if(platform.system == "Windows"):
-			print("\nUsage: simpler-slideshow.exe [OPTIONS]")
-			print("Type simpler-slideshow --help to see a list of options")
+		print(f"\nUsage: {sys.argv[0]} [OPTIONS]")
+		print(f"Type {sys.argv[0]} --help to see a list of options")
 		sys.exit()
 
 print_controls()
