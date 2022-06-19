@@ -17,12 +17,12 @@ I thought it would be nice to build a simplistic  slideshow application on Pytho
 Technically, the slideshow can run on any kind of device like a generic windows computer. But I believe the most cost effective and efficient hardware for this use-case would be a raspberry pi. <br> Advantages of using Pi:
 1. Uses less power and therefore less 💲
 2. Lightweight fast hardware/OS, it would be overkill to use a good computer and annoying to use a slow computer.
-3. Linux is easier to customize. For example, setting up ssh server to access the Pi or do other cool things like making the Pi run the slideshow on startup.
+3. Linux is easier to customize. For example, setting up ssh server to access the Pi or making the Pi run on startup.
 
 I have the Pi's SSH/VNC enabled and set my router to give the Pi a static IP address (DHCP reservation). This makes it so that I can essentially run a headless setup and access the Pi over the local network. Technically, it isn't fully headless because it does have a "display" (the TV lol). But this makes accessing the Pi much more convenient.
 
 With this setup, I have full access to the Pi from any device on the same local network and can:
-- Control the slideshow or any other settings on the Pi
+- Control the slideshow or any other settings on the Pi (from the comfort of my room 🛌💤)
 - Send photos from my pc to the Pi through the local network. This removes the pain in physically transferring photos using one of its usb ports.
 
 ## Controls
@@ -57,10 +57,17 @@ However, there are photo transformation and display sequence options that add a 
 
 ### Background Color
 
-You are able to change the background color. The background color is the empty space the photo does not take up.
+You can change the color of the background. The background is the empty space the photo does not take up.
 
 Current Supported Colors:
 | Color | Description |
 | :---: | :---: |
 | `black` | ⚫ |
 | `white` | ⚪ |
+| `red` | 🔴 |
+| `green` | 🟢 |
+| `blue` | 🔵 |
+| `cyan` | 🔵 |
+| `yellow` | 🟡 |
+| `magenta` | 🟣 |
+| `hex value` | 🌈 |
