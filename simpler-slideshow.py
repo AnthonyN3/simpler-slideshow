@@ -13,11 +13,12 @@ def fullscreen(event=None):
 
 # possible race condition? after/after_cancel
 def pause_slideshow(event=None):
-	global isPause
+	global isPause, photo_task_id
 	if isPause:
 		isPause = False
 		label_image.config(text="")
-		start_slideshow()
+		# Restart loop with half the specified delay for the first photo
+		photo_task_id = root.after(round(delay_ms/2), next_photo_rnd if isRandomize else next_photo_order)
 	else:
 		isPause = True
 		if "text_task_id" in globals():
