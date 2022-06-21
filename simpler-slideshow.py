@@ -13,11 +13,12 @@ def fullscreen(event=None):
 
 # possible race condition? after/after_cancel
 def pause_slideshow(event=None):
-	global isPause
+	global isPause, photo_task_id
 	if isPause:
 		isPause = False
 		label_image.config(text="")
-		start_slideshow()
+		# Restart loop with half the specified delay for the first photo
+		photo_task_id = root.after(round(delay_ms/2), next_photo_rnd if isRandomize else next_photo_order)
 	else:
 		isPause = True
 		if "text_task_id" in globals():
@@ -34,6 +35,53 @@ def display_speed(speed_ms):
 
 def remove_text():
 	label_image.config(text="")
+
+
+def next_photo(event=None):
+	global list_count, list_count_history, count, index
+	# Note: The next/previous control functionality adds more complexity to my original method
+	# of using a stack data structure for the photo randomization. It would be much simpler to use list indexing instead. 
+	if isRandomize:
+		if not list_count:
+			list_count = generate_list(num_of_img)
+			list_count_history = []
+		temp_index = index
+		index = list_count.pop()
+		if temp_index == index:
+			if not list_count:
+				list_count = generate_list(num_of_img)
+				list_count_history = []
+			else:
+				list_count_history.append(index)
+			index = list_count.pop()
+		list_count_history.append(index)
+		label_image.config(image=images[index])
+	else:
+		if count >= num_of_img - 1:
+			count = -1
+		count = count + 1
+		label_image.config(image=images[count])
+
+def previous_photo(event=None):
+	global list_count, list_count_history, count, index
+	if isRandomize:
+		if list_count_history:
+			if index == list_count_history[-1]:
+				if len(list_count_history) > 1:
+					list_count.append(list_count_history.pop())
+					index = list_count_history.pop()
+					list_count.append(index)
+					label_image.config(image=images[index])
+			else:
+				index = list_count_history.pop()
+				list_count.append(index)
+				label_image.config(image=images[index])
+			
+	else:
+		if count <= 0:
+			count = num_of_img
+		count = count - 1
+		label_image.config(image=images[count])
 
 def speedup_slideshow(event=None):
 	if not isPause:
@@ -73,17 +121,20 @@ def reset_timer():
 
 def next_photo_order():
 	global count, photo_task_id
-	if count == (num_of_img):
-		count = 0
+	if count >= num_of_img - 1:
+		count = -1
+	count = count + 1	# increment needs to be above the config set so the next/previous controls sync
 	label_image.config(image=images[count])
-	count = count + 1
 	photo_task_id = root.after(delay_ms, next_photo_order)
 
 def next_photo_rnd():
-	global list_count, photo_task_id
+	global list_count, photo_task_id, list_count_history, index
 	if not list_count:
 		list_count = generate_list(num_of_img)
-	label_image.config(image=images[list_count.pop()])
+		list_count_history = []
+	index = list_count.pop()
+	list_count_history.append(index)
+	label_image.config(image=images[index])
 	photo_task_id = root.after(delay_ms, next_photo_rnd)
 
 def is_number(num):
@@ -99,11 +150,13 @@ def ms_to_sec(ms):
 
 def print_controls():
 	print("\n ------------------ CONTROLS ------------------")
-	print("     SPACE - pause")
-	print("  LEFT_ARW - slow down | min=" + ms_to_sec(min_delay_ms) + " sec")
-	print("  LEFT_ARW - speed up  | max=" + ms_to_sec(max_delay_ms) + " sec")
+	print("         ^ - speed up  | max=" + ms_to_sec(max_delay_ms) + " sec")
+	print("         v - slow down | min=" + ms_to_sec(min_delay_ms) + " sec")
+	print("        <- - previous photo")
+	print("        -> - next photo")
 	print("         F - fullscreen")
 	print("       ESC - exit")
+	print("     SPACE - pause")
 	print(" ----------------------------------------------")
 
 def print_help():
@@ -122,9 +175,9 @@ def print_help():
                                \"white\", \"red\", \"green\", \"blue\",\n\
                                \"cyan\", \"yellow\", \"magenta\" or \n\
                                use hex colors ie: \"FF0000\". Omit the #")
-	print("    -s, --speed SECONDS        Specify slideshow speed in seconds\n\
-                               Will round to nearest half or full\n\
-                               second. ie: 1.0, 1.5, 2.0, 2.5, etc")
+	print("    -t, --timer SECONDS        Specify slideshow time between photos\n\
+                               in seconds. Will round to nearest half\n\
+                               or full second. ie: 1.0, 1.5, 2.0, etc")
 	print("\nNote: --fit and --crop can't be used together\n      --randomize and --order can't be used together")
 
 # Variables
@@ -133,8 +186,10 @@ min_delay_ms = 500
 delay_ms = 4500
 isPause = False
 isFullscreen = True
-count = 0
+count = -1
+index = 0
 list_count = []
+list_count_history = []
 num_of_img = 0
 path = "./Photos/"
 valid_formats = ("JPEG", "PNG", "TGA", "WEBP", "BMP", "PSD") # "python3 -m PIL" to list all supported formats or run "PIL.features.pilinfo()"
@@ -155,8 +210,8 @@ if args:
 	try:
 		option_value, arg_val = getopt.getopt(
 			args, 
-			"hrocfb:s:", 
-			["help","randomize", "order", "crop", "fit", "bg-color=", "speed="]
+			"hrocfb:t:", 
+			["help","randomize", "order", "crop", "fit", "bg-color=", "timer="]
 			)
 
 		if arg_val:
@@ -196,7 +251,7 @@ if args:
 					print("Invalid background color specified for --bg_color/-b")
 					print(f"Type {sys.argv[0]} --help to see a list of options")
 					sys.exit()
-			elif opt in ("-s", "--speed"):
+			elif opt in ("-t", "--timer"):
 				if is_number(val):
 					delay_input = int(round(float(val),1) * 1000) #convert second to ms
 					if delay_input > max_delay_ms:
@@ -271,8 +326,10 @@ label_image.pack()
 # Binding keys to an event
 root.bind("<Escape>", exit_slideshow)
 root.bind("<space>", pause_slideshow)
-root.bind("<Left>", slowdown_slideshow)
-root.bind("<Right>", speedup_slideshow)
+root.bind("<Down>", slowdown_slideshow)
+root.bind("<Up>", speedup_slideshow)
+root.bind("<Left>", previous_photo)
+root.bind("<Right>", next_photo)
 root.bind("<f>", fullscreen)
 
 screen_size = ImageGrab.grab().size
