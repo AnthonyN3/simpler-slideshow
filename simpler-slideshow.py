@@ -191,7 +191,7 @@ index = 0
 list_count = []
 list_count_history = []
 num_of_img = 0
-path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "Photos", "")
+path = ""
 valid_formats = ("JPEG", "PNG", "TGA", "WEBP", "BMP", "PSD") # "python3 -m PIL" to list all supported formats or run "PIL.features.pilinfo()"
 yes_ans = ("yes", "y", "ya", "ye", "yee", "yup", "yuh", "yeah", "okay", "ok", "yep", "yea", "alright", "roger", "oui", "sure") # lol
 color_list = ("white", "black", "red", "green", "blue", "cyan", "yellow", "magenta")
@@ -304,6 +304,12 @@ if not isCropped and bg_color == None:
 		bg_color = bg_color_input
 	else:
 		bg_color = "black"
+
+# Getting the current path is dependent on if it's a python script or a executable (pyinstaller)
+if getattr(sys, 'frozen', False):
+	path = os.path.join(os.path.dirname(sys.executable), "Photos", "")
+else:
+	path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Photos", "")
 
 # Initialize a display window
 root = Tk()
