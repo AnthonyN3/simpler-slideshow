@@ -2,7 +2,7 @@ from collections import deque
 import platform
 import random
 from threading import Thread, Lock
-from tkinter import *
+from tkinter import Tk, Label, constants as tkinter_constants
 from PIL import Image, ImageTk, ImageGrab, ImageOps
 import settings, helper
 
@@ -18,7 +18,7 @@ forward_buffer_index: int
 backward_buffer_index: int = -1
 
 app_settings: settings.SlideSettings
-screen_size: tuple[int, int]
+screen_size: None # tuple(int, int)
 current_img = None
 current_tk_photo = None
 isPaused = False
@@ -42,15 +42,15 @@ def fullscreen(event=None):
 	isFullscreen = not isFullscreen
 
 def pause_slideshow(event=None):
-	global isPaused, next_img_task_id
-	if isPaused:
-		isPaused = False
-		tk_label.config(text="")
-		next_img_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
-	else:
-		isPaused = True
-		stop_slideshow()
-		tk_label.config(text="PAUSED")
+    global isPaused, next_img_task_id
+    if isPaused:
+        isPaused = False
+        tk_label.config(text="")
+        next_img_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+    else:
+        isPaused = True
+        stop_slideshow()
+        tk_label.config(text="PAUSED")
 
 def speedup_slideshow(event=None):
 	if not isPaused:
@@ -198,7 +198,7 @@ def preload_previous_image():
 
 # ***************************************
 
-def stop_slideshow(event=None):
+def stop_slideshow():
     tk_window.after_cancel(next_img_task_id)
 
 def schedule_next_photo():
@@ -226,6 +226,7 @@ def schedule_next_photo():
 
 def load_initial_photos():
     global forward_buffer_index
+    print("\n Attempting To Load Initial Photos")
     for index, file_name in enumerate(img_file_names):
         try:
 
@@ -289,9 +290,9 @@ if __name__ == "__main__":
     # creates/pack label widget onto the root window
     tk_label = Label(
         tk_window,
-        anchor=CENTER,
+        anchor=tkinter_constants.CENTER,
         borderwidth="0",
-        compound=CENTER,
+        compound=tkinter_constants.CENTER,
         font=('Arial' if platform.system() == 'Windows' else 'Liberation Mono',50),
         fg='#ef0000'
         )

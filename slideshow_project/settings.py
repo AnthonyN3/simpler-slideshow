@@ -126,7 +126,7 @@ def get_user_input(settings: SlideSettings):
         else:
             settings.delay_ms = 4500
 
-    print(" SPEED: " + str(round(settings.delay_ms/1000, 1)) +" sec")
+        print(" SPEED: " + str(round(settings.delay_ms/1000, 1)) +" sec")
 
     if settings.isCropped == None:
         settings.isCropped = input("\n Would you like the photos to be Cropped to fit? [y/n] ").lower() in YES_ANS

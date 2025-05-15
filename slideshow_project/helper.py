@@ -45,11 +45,6 @@ def is_number(num):
 def ms_to_sec(ms):
 	return str(round(ms/1000,1))
 
-def generate_list(size):
-	li = list(range(size))
-	random.shuffle(li)
-	return li
-
 def get_photo_path() -> str:
 	# Getting the current path is dependent on if it's a python script or a executable (pyinstaller)
 	if getattr(sys, 'frozen', False):
