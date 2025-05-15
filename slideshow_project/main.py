@@ -12,8 +12,8 @@ BUFFER_SIZE = 5
 # Variables
 photo_dir_path: str
 img_file_names: list
-next_img_queue: deque
-prev_img_queue: deque
+next_img_deque: deque
+prev_img_deque: deque
 forward_buffer_index: int
 backward_buffer_index: int = -1
 
@@ -25,8 +25,8 @@ isPaused = False
 isFullscreen: bool = True
 
 # Thread Locks used for preloading images on diff threads
-next_img_queue_lock = Lock()
-prev_img_queue_lock = Lock()
+next_img_deque_lock = Lock()
+prev_img_deque_lock = Lock()
 
 # ***************************************
 # KEY BINDS
@@ -85,44 +85,44 @@ def reset_timer():
 def next_photo(event=None):
     global next_img_task_id, current_img, current_tk_photo, backward_buffer_index
 
-    # Check if queue is not empty
-    if next_img_queue:
+    # Check if deque is not empty
+    if next_img_deque:
         temp_img = current_img
 
-        current_img = next_img_queue.popleft()
+        current_img = next_img_deque.popleft()
         current_tk_photo = ImageTk.PhotoImage(current_img)
 
         tk_label.config(image=current_tk_photo)
 
         if temp_img:
-            with prev_img_queue_lock:
-                if (len(prev_img_queue) == prev_img_queue.maxlen):
-                    prev_img_queue.popleft().close()
+            with prev_img_deque_lock:
+                if (len(prev_img_deque) == prev_img_deque.maxlen):
+                    prev_img_deque.popleft().close()
                     backward_buffer_index = backward_buffer_index + 1
-                prev_img_queue.append(temp_img)
+                prev_img_deque.append(temp_img)
         
-        # Call method asynchronously here to open a new image and append it to next_img_queue
+        # Call method asynchronously here to open a new image and append it to next_img_deque
         Thread(target=preload_next_image, daemon=True).start()
           
 def previous_photo(event=None):
     global next_img_task_id, current_img, current_tk_photo, forward_buffer_index
 
-    # Check if queue is not empty
-    if prev_img_queue:
+    # Check if deque is not empty
+    if prev_img_deque:
         temp_img = current_img
 
-        current_img = prev_img_queue.pop()
+        current_img = prev_img_deque.pop()
         current_tk_photo = ImageTk.PhotoImage(current_img)
 
         tk_label.config(image=current_tk_photo)
 
         if temp_img:
-            with next_img_queue_lock:
-                if (len(next_img_queue) == next_img_queue.maxlen):
-                    next_img_queue.pop().close()
+            with next_img_deque_lock:
+                if (len(next_img_deque) == next_img_deque.maxlen):
+                    next_img_deque.pop().close()
                     forward_buffer_index = forward_buffer_index - 1
 
-                next_img_queue.appendleft(temp_img)
+                next_img_deque.appendleft(temp_img)
 
         Thread(target=preload_previous_image, daemon=True).start()
 
@@ -136,9 +136,9 @@ def print_info(event=None):
     print("frwd_buf_index:", forward_buffer_index)
     print("bkwrd_buf_index:", backward_buffer_index)
     print()
-    print("prev_q", len(prev_img_queue), [obj.filename for obj in prev_img_queue])
+    print("prev_q", len(prev_img_deque), [obj.filename for obj in prev_img_deque])
     print("curr_img:", current_img.filename)
-    print("next_q", len(next_img_queue), [obj.filename for obj in next_img_queue])
+    print("next_q", len(next_img_deque), [obj.filename for obj in next_img_deque])
     print()
     print("***************")
     print("***************")
@@ -149,13 +149,13 @@ def print_info(event=None):
 def preload_next_image():
     global forward_buffer_index, backward_buffer_index
     try:
-        with next_img_queue_lock:
+        with next_img_deque_lock:
 
             # Reset Indexes when reaching the end of photo set
             if forward_buffer_index >= len(img_file_names):
                 forward_buffer_index = 0
-                with prev_img_queue_lock:
-                    backward_buffer_index = -(BUFFER_SIZE*2+1) # this is to account for photos already in prev buffer queue
+                with prev_img_deque_lock:
+                    backward_buffer_index = -(BUFFER_SIZE*2+1) # this is to account for photos already in prev buffer deque
                 if app_settings.isRandomized:
                      random.shuffle(img_file_names)
 
@@ -170,7 +170,7 @@ def preload_next_image():
             img.filename = img_file_names[forward_buffer_index]
 
             # Add Next Photo
-            next_img_queue.append(img)
+            next_img_deque.append(img)
             forward_buffer_index = forward_buffer_index + 1
     except Exception as e:
         print(f"Error Loading Next Photo: {e}")
@@ -178,7 +178,7 @@ def preload_next_image():
 def preload_previous_image():
     global backward_buffer_index
     try:
-        with prev_img_queue_lock:
+        with prev_img_deque_lock:
             if (backward_buffer_index > -1):
                 img = Image.open(fp = photo_dir_path + img_file_names[backward_buffer_index], formats=settings.VALID_FORMATS)
 
@@ -191,7 +191,7 @@ def preload_previous_image():
                 img.filename = img_file_names[backward_buffer_index]
 
                 # Add Previous Photo
-                prev_img_queue.appendleft(img)
+                prev_img_deque.appendleft(img)
                 backward_buffer_index = backward_buffer_index - 1
     except Exception as e:
         print(f"Error Loading Previous Photo: {e}")
@@ -206,20 +206,20 @@ def schedule_next_photo():
 
     temp_img = current_img
 
-    current_img = next_img_queue.popleft()
+    current_img = next_img_deque.popleft()
     current_tk_photo = ImageTk.PhotoImage(current_img)
 
     tk_label.config(image=current_tk_photo)
 
     if temp_img:
-        with prev_img_queue_lock:
-            if (len(prev_img_queue) == prev_img_queue.maxlen):
-                prev_img_queue.popleft().close()
+        with prev_img_deque_lock:
+            if (len(prev_img_deque) == prev_img_deque.maxlen):
+                prev_img_deque.popleft().close()
                 backward_buffer_index = backward_buffer_index + 1
                 # ^ TODO: This doesn't work once you to a full lap around the img_file_names and want to reset the indexes.
-            prev_img_queue.append(temp_img)
+            prev_img_deque.append(temp_img)
     
-    # Call method asynchronously here to open a new image and append it to next_img_queue
+    # Call method asynchronously here to open a new image and append it to next_img_deque
     Thread(target=preload_next_image, daemon=True).start()
 
     next_img_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
@@ -231,7 +231,7 @@ def load_initial_photos():
         try:
 
             forward_buffer_index = index
-            if(len(next_img_queue) == next_img_queue.maxlen):
+            if(len(next_img_deque) == next_img_deque.maxlen):
                 break
 
             img = Image.open(fp = photo_dir_path + file_name, formats=settings.VALID_FORMATS)
@@ -248,7 +248,7 @@ def load_initial_photos():
                 img = ImageOps.contain(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
 
             img.filename = file_name
-            next_img_queue.append(img)
+            next_img_deque.append(img)
             print(" +[LOADED] -", file_name, ("(photo transposed)" if isTransposed else '') )
 
         except Exception as e:
@@ -259,8 +259,8 @@ if __name__ == "__main__":
     helper.print_controls(settings.MIN_DELAY_MS, settings.MAX_DELAY_MS)
 
     # Initialize deque and set the max length
-    next_img_queue = deque(maxlen=BUFFER_SIZE)
-    prev_img_queue = deque(maxlen=BUFFER_SIZE)
+    next_img_deque = deque(maxlen=BUFFER_SIZE)
+    prev_img_deque = deque(maxlen=BUFFER_SIZE)
 
     # Grab slideshow settings from cmd line options and or user input
     app_settings = settings.get_cmd_line_options()
