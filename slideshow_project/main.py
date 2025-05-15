@@ -53,18 +53,18 @@ def pause_slideshow(event=None):
         tk_label.config(text="PAUSED")
 
 def speedup_slideshow(event=None):
-	if not isPaused:
-		if(app_settings.delay_ms > settings.MIN_DELAY_MS):
-			app_settings.delay_ms = app_settings.delay_ms - 500
-			display_speed(app_settings.delay_ms )
-			reset_timer()
+    if not isPaused:
+        if(app_settings.delay_ms > settings.MIN_DELAY_MS):
+            app_settings.delay_ms = app_settings.delay_ms - 500
+            display_speed(app_settings.delay_ms )
+            reset_timer()
 
 def slowdown_slideshow(event=None):
-	if not isPaused:
-		if(app_settings.delay_ms  < settings.MAX_DELAY_MS):
-			app_settings.delay_ms  = app_settings.delay_ms  + 500
-			display_speed(app_settings.delay_ms )
-			reset_timer()
+    if not isPaused:
+        if(app_settings.delay_ms  < settings.MAX_DELAY_MS):
+            app_settings.delay_ms  = app_settings.delay_ms + 500
+            display_speed(app_settings.delay_ms )
+            reset_timer()
                
 def display_speed(speed_ms):
     global text_task_id
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     tk_window = Tk()
     tk_window.title("Simpler SlideShow")
     tk_window.attributes('-fullscreen', isFullscreen)
-    tk_window.config(cursor="none", bg=app_settings.bg_color)
+    tk_window.config(cursor="none")
     tk_window.focus_force()
 
     # creates/pack label widget onto the root window
@@ -294,9 +294,10 @@ if __name__ == "__main__":
         borderwidth="0",
         compound=tkinter_constants.CENTER,
         font=('Arial' if platform.system() == 'Windows' else 'Liberation Mono',50),
-        fg='#ef0000'
+        fg='#ef0000',
+        bg=app_settings.bg_color
         )
-    tk_label.pack()
+    tk_label.pack(expand=True, fill="both")
 
     # Binding keys to an event/method
     tk_window.bind("<Escape>", exit_slideshow)
