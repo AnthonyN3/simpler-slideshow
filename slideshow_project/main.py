@@ -284,7 +284,7 @@ if __name__ == "__main__":
     tk_window = Tk()
     tk_window.title("Simpler SlideShow")
     tk_window.attributes('-fullscreen', isFullscreen)
-    tk_window.config(cursor="none", bg=app_settings.bg_color)
+    tk_window.config(cursor="none")
     tk_window.focus_force()
 
     # creates/pack label widget onto the root window
@@ -294,9 +294,10 @@ if __name__ == "__main__":
         borderwidth="0",
         compound=tkinter_constants.CENTER,
         font=('Arial' if platform.system() == 'Windows' else 'Liberation Mono',50),
-        fg='#ef0000'
+        fg='#ef0000',
+        bg=app_settings.bg_color
         )
-    tk_label.pack()
+    tk_label.pack(expand=True, fill="both")
 
     # Binding keys to an event/method
     tk_window.bind("<Escape>", exit_slideshow)
