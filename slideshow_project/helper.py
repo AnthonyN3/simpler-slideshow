@@ -11,6 +11,7 @@ def print_controls(min_delay_ms: int, max_delay_ms: int):
 	print("         F - fullscreen")
 	print("       ESC - exit")
 	print("     SPACE - pause")
+	print("         S - show slide setting values")
 	print(" ----------------------------------------------")
 
 def print_help():
