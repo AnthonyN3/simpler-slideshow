@@ -1,5 +1,6 @@
 import sys, getopt, re
 import helper
+from dataclasses import dataclass
 
 MAX_DELAY_MS = 30_000
 MIN_DELAY_MS = 500
@@ -10,12 +11,13 @@ VALID_FORMATS = ("JPEG", "PNG", "TGA", "WEBP", "BMP", "PSD")
 YES_ANS = ("yes", "y", "ya", "ye", "yee", "yup", "yuh", "yeah", "okay", "ok", "yep", "yea", "alright", "roger", "oui", "sure")
 BG_COLOR_OPTIONS = ("white", "black", "red", "green", "blue", "cyan", "yellow", "magenta")
 
+@dataclass
 class SlideSettings:
-    def __init__(self, isRandomized: bool, isCropped: bool, delay_ms: int, bg_color: str):
-        self.isRandomized = isRandomized
-        self.isCropped = isCropped
-        self.delay_ms = delay_ms
-        self.bg_color = bg_color
+    isRandomized: bool
+    isCropped: bool
+    delay_ms: int
+    bg_color: str
+    text_font: str = None
     
     def print_values(self):
         print("\n RESIZING = ENABLED")
