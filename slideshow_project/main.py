@@ -36,6 +36,8 @@ prev_img_deque_lock = Lock()
 
 def exit_slideshow(event=None):
     stop_slideshow()
+    if "remove_speed_text_task_id" in globals():
+        speed_change_label.after_cancel(remove_speed_text_task_id)
     tk_window.destroy()
 
 def fullscreen(event=None):
@@ -55,34 +57,23 @@ def pause_slideshow(event=None):
         isPaused = True
 
 def speedup_slideshow(event=None):
-    if not isPaused:
-        if(app_settings.delay_ms > settings.MIN_DELAY_MS):
-            app_settings.delay_ms = app_settings.delay_ms - 500
-            display_speed(app_settings.delay_ms )
-            reset_timer()
+    if(app_settings.delay_ms > settings.MIN_DELAY_MS):
+        app_settings.delay_ms = app_settings.delay_ms - 500
+        display_speed(app_settings.delay_ms)
 
 def slowdown_slideshow(event=None):
-    if not isPaused:
-        if(app_settings.delay_ms  < settings.MAX_DELAY_MS):
-            app_settings.delay_ms  = app_settings.delay_ms + 500
-            display_speed(app_settings.delay_ms )
-            reset_timer()
+    if(app_settings.delay_ms  < settings.MAX_DELAY_MS):
+        app_settings.delay_ms  = app_settings.delay_ms + 500
+        display_speed(app_settings.delay_ms)
                
 def display_speed(speed_ms):
-    global text_task_id
-    if "text_task_id" in globals():
-        tk_window.after_cancel(text_task_id)
-    tk_label.config(text="\n\n\n\n\n" + helper.ms_to_sec(speed_ms) + " seconds")
-    text_task_id = tk_window.after(1000, remove_text)
-     
-def remove_text():
-	tk_label.config(text="")
-     
-def reset_timer():
-    global next_img_task_id
-    if "next_img_task_id" in globals():
-        tk_window.after_cancel(next_img_task_id)
-    next_img_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+    global remove_speed_text_task_id
+    if "remove_speed_text_task_id" in globals():
+        speed_change_label.after_cancel(remove_speed_text_task_id)
+    speed_change_label.config(text=helper.ms_to_sec(speed_ms) + " seconds")
+    if not speed_change_label.winfo_ismapped():
+        speed_change_label.place(relx=0.5, rely=1.0, y=-50, anchor="s")
+    remove_speed_text_task_id = speed_change_label.after(1000, speed_change_label.place_forget)
 
 def next_photo(event=None):
     global next_img_task_id, current_img, current_tk_photo, backward_buffer_index
@@ -316,6 +307,7 @@ if __name__ == "__main__":
     photo_count_label.place(x=10, y=10, anchor="nw")
 
     pause_label = Label(tk_window, text="PAUSED", font=(app_settings.text_font, 20, "bold"), fg="red", bg="white")
+    speed_change_label = Label(tk_window, text="", font=(app_settings.text_font, 35, "bold"), fg="red", bg="white")
 
     # Binding keys to an event/method
     tk_window.bind("<Escape>", exit_slideshow)
