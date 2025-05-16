@@ -46,11 +46,11 @@ def fullscreen(event=None):
 	isFullscreen = not isFullscreen
 
 def pause_slideshow(event=None):
-    global isPaused, next_img_task_id
+    global isPaused, schedule_next_photo_task_id
     if isPaused:
         isPaused = False
         pause_label.place_forget()
-        next_img_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+        schedule_next_photo_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
     else:
         stop_slideshow()
         pause_label.place(relx=0.5, y=10, anchor="n")
@@ -76,7 +76,7 @@ def display_speed(speed_ms):
     remove_speed_text_task_id = speed_change_label.after(1000, speed_change_label.place_forget)
 
 def next_photo(event=None):
-    global next_img_task_id, current_img, current_tk_photo, backward_buffer_index
+    global current_img, current_tk_photo, backward_buffer_index
 
     # Check if deque is not empty
     if next_img_deque:
@@ -99,7 +99,7 @@ def next_photo(event=None):
         Thread(target=preload_next_image, daemon=True).start()
           
 def previous_photo(event=None):
-    global next_img_task_id, current_img, current_tk_photo, forward_buffer_index
+    global current_img, current_tk_photo, forward_buffer_index
 
     # Check if deque is not empty
     if prev_img_deque:
@@ -196,13 +196,13 @@ def preload_previous_image():
 # ***************************************
 
 def stop_slideshow():
-    tk_window.after_cancel(next_img_task_id)
+    tk_window.after_cancel(schedule_next_photo_task_id)
 
 def update_photo_count_label():
     photo_count_label.config(text=f"{current_img.index + 1} / {len(img_file_names)}")
 
 def schedule_next_photo():
-    global next_img_task_id, current_img, current_tk_photo, backward_buffer_index
+    global schedule_next_photo_task_id, current_img, current_tk_photo, backward_buffer_index
 
     # Check if photos avaiable
     if next_img_deque:
@@ -224,7 +224,11 @@ def schedule_next_photo():
         # Call method on a different thread to open a new image and append it to next_img_deque (parallelism)
         Thread(target=preload_next_image, daemon=True).start()
 
-        next_img_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+        schedule_next_photo_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+    else:
+        # If next photo deque is empty, the background thread is still loading photos. So we want to schedule another photo or the slide will stop
+        tk_window.after_cancel(schedule_next_photo_task_id)
+        schedule_next_photo_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
 
 def load_initial_photos():
     global forward_buffer_index
