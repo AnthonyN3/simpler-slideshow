@@ -99,7 +99,7 @@ def next_photo(event=None):
         current_img = next_img_deque.popleft()
         current_tk_photo = ImageTk.PhotoImage(current_img)
 
-        tk_label.config(image=current_tk_photo)
+        tk_photo_label.config(image=current_tk_photo)
         update_labels()
 
         if temp_img:
@@ -123,7 +123,7 @@ def previous_photo(event=None):
         current_tk_photo = ImageTk.PhotoImage(current_img)
         update_labels()
 
-        tk_label.config(image=current_tk_photo)
+        tk_photo_label.config(image=current_tk_photo)
 
         if temp_img:
             with next_img_deque_lock:
@@ -229,7 +229,7 @@ def schedule_next_photo():
         current_img = next_img_deque.popleft()
         current_tk_photo = ImageTk.PhotoImage(current_img)
 
-        tk_label.config(image=current_tk_photo)
+        tk_photo_label.config(image=current_tk_photo)
         update_labels()
 
         if temp_img:
@@ -314,7 +314,7 @@ if __name__ == "__main__":
     tk_window.focus_force()
 
     # creates/pack label widget onto the root window
-    tk_label = Label(
+    tk_photo_label = Label(
         tk_window,
         anchor=TkinterConstants.CENTER,
         borderwidth="0",
@@ -323,7 +323,7 @@ if __name__ == "__main__":
         fg='#ef0000',
         bg=app_settings.bg_color
         )
-    tk_label.pack(expand=True, fill="both")
+    tk_photo_label.pack(expand=True, fill="both")
 
     # Create and place photo count label 
     photo_count_label = Label(tk_window, text="0", font=(app_settings.text_font, 15, "bold"), fg="black", bg="white")
