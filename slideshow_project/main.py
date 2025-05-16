@@ -199,7 +199,7 @@ def stop_slideshow():
     tk_window.after_cancel(next_img_task_id)
 
 def update_photo_count_label():
-    photo_count_label.config(text=f"{current_img.index + 1} / {len(img_file_names)}")
+    photo_count_label.config(text=f"{current_img.index + 1}/{len(img_file_names)}")
 
 def schedule_next_photo():
     global next_img_task_id, current_img, current_tk_photo, backward_buffer_index
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     screen_size = ImageGrab.grab().size
     load_initial_photos()
 
-    app_settings.text_font = 'Arial' if platform.system() == 'Windows' else 'Liberation Mono'
+    app_settings.text_font = 'Arial' if platform.system() == 'Windows' else 'Liberation Sans'
     app_settings.print_values()
 
     # Initialize a display window
