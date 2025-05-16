@@ -46,26 +46,40 @@ def fullscreen(event=None):
 	isFullscreen = not isFullscreen
 
 def pause_slideshow(event=None):
-    global isPaused, next_img_task_id
+    global isPaused, schedule_next_photo_task_id
     if isPaused:
         isPaused = False
         pause_label.place_forget()
-        next_img_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+        schedule_next_photo_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+
+        photo_file_name_label.place_forget()
     else:
         stop_slideshow()
         pause_label.place(relx=0.5, y=10, anchor="n")
         isPaused = True
 
+        photo_file_name_label.config(text=current_img.file_name)
+        photo_file_name_label.place(relx=1.0, rely=0.0, x=-10, y=10, anchor="ne")
+
 def speedup_slideshow(event=None):
     if(app_settings.delay_ms > settings.MIN_DELAY_MS):
         app_settings.delay_ms = app_settings.delay_ms - 500
+        update_settings_label()
         display_speed(app_settings.delay_ms)
 
 def slowdown_slideshow(event=None):
     if(app_settings.delay_ms  < settings.MAX_DELAY_MS):
         app_settings.delay_ms  = app_settings.delay_ms + 500
+        update_settings_label()
         display_speed(app_settings.delay_ms)
-               
+
+def show_settings(event=None):
+    if slide_settings_label.winfo_ismapped():
+        slide_settings_label.place_forget()
+    else:
+        update_settings_label()
+        slide_settings_label.place(relx=0.0, rely=1.0, x=10, y=-10, anchor="sw")
+
 def display_speed(speed_ms):
     global remove_speed_text_task_id
     if "remove_speed_text_task_id" in globals():
@@ -76,7 +90,7 @@ def display_speed(speed_ms):
     remove_speed_text_task_id = speed_change_label.after(1000, speed_change_label.place_forget)
 
 def next_photo(event=None):
-    global next_img_task_id, current_img, current_tk_photo, backward_buffer_index
+    global current_img, current_tk_photo, backward_buffer_index
 
     # Check if deque is not empty
     if next_img_deque:
@@ -85,8 +99,8 @@ def next_photo(event=None):
         current_img = next_img_deque.popleft()
         current_tk_photo = ImageTk.PhotoImage(current_img)
 
-        tk_label.config(image=current_tk_photo)
-        update_photo_count_label()
+        tk_photo_label.config(image=current_tk_photo)
+        update_labels()
 
         if temp_img:
             with prev_img_deque_lock:
@@ -99,7 +113,7 @@ def next_photo(event=None):
         Thread(target=preload_next_image, daemon=True).start()
           
 def previous_photo(event=None):
-    global next_img_task_id, current_img, current_tk_photo, forward_buffer_index
+    global current_img, current_tk_photo, forward_buffer_index
 
     # Check if deque is not empty
     if prev_img_deque:
@@ -107,9 +121,9 @@ def previous_photo(event=None):
 
         current_img = prev_img_deque.pop()
         current_tk_photo = ImageTk.PhotoImage(current_img)
-        update_photo_count_label()
+        update_labels()
 
-        tk_label.config(image=current_tk_photo)
+        tk_photo_label.config(image=current_tk_photo)
 
         if temp_img:
             with next_img_deque_lock:
@@ -131,9 +145,9 @@ def print_info(event=None):
     print("frwd_buf_index:", forward_buffer_index)
     print("bkwrd_buf_index:", backward_buffer_index)
     print()
-    print("prev_q", len(prev_img_deque), [obj.filename for obj in prev_img_deque])
-    print("curr_img:", current_img.filename)
-    print("next_q", len(next_img_deque), [obj.filename for obj in next_img_deque])
+    print("prev_q", len(prev_img_deque), [obj.file_name for obj in prev_img_deque])
+    print("curr_img:", current_img.file_name)
+    print("next_q", len(next_img_deque), [obj.file_name for obj in next_img_deque])
     print()
     print("***************")
     print("***************")
@@ -162,7 +176,7 @@ def preload_next_image():
                 img = ImageOps.fit(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
             else:
                 img = ImageOps.contain(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
-            img.filename = img_file_names[forward_buffer_index]
+            img.file_name = img_file_names[forward_buffer_index]
             img.index = forward_buffer_index
 
             # Add Next Photo
@@ -184,7 +198,7 @@ def preload_previous_image():
                     img = ImageOps.fit(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
                 else:
                     img = ImageOps.contain(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
-                img.filename = img_file_names[backward_buffer_index]
+                img.file_name = img_file_names[backward_buffer_index]
                 img.index = backward_buffer_index
 
                 # Add Previous Photo
@@ -196,13 +210,17 @@ def preload_previous_image():
 # ***************************************
 
 def stop_slideshow():
-    tk_window.after_cancel(next_img_task_id)
+    tk_window.after_cancel(schedule_next_photo_task_id)
 
-def update_photo_count_label():
+def update_labels():
     photo_count_label.config(text=f"{current_img.index + 1} / {len(img_file_names)}")
+    photo_file_name_label.config(text=current_img.file_name)
+
+def update_settings_label():
+    slide_settings_label.config(text=str(app_settings))
 
 def schedule_next_photo():
-    global next_img_task_id, current_img, current_tk_photo, backward_buffer_index
+    global schedule_next_photo_task_id, current_img, current_tk_photo, backward_buffer_index
 
     # Check if photos avaiable
     if next_img_deque:
@@ -211,8 +229,8 @@ def schedule_next_photo():
         current_img = next_img_deque.popleft()
         current_tk_photo = ImageTk.PhotoImage(current_img)
 
-        tk_label.config(image=current_tk_photo)
-        update_photo_count_label()
+        tk_photo_label.config(image=current_tk_photo)
+        update_labels()
 
         if temp_img:
             with prev_img_deque_lock:
@@ -224,7 +242,11 @@ def schedule_next_photo():
         # Call method on a different thread to open a new image and append it to next_img_deque (parallelism)
         Thread(target=preload_next_image, daemon=True).start()
 
-        next_img_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+        schedule_next_photo_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+    else:
+        # If next photo deque is empty, the background thread is still loading photos. So we want to schedule another photo or the slide will stop
+        tk_window.after_cancel(schedule_next_photo_task_id)
+        schedule_next_photo_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
 
 def load_initial_photos():
     global forward_buffer_index
@@ -249,7 +271,7 @@ def load_initial_photos():
             else:
                 img = ImageOps.contain(image=img, size=screen_size, method=Image.Resampling.LANCZOS)
 
-            img.filename = file_name
+            img.file_name = file_name
             img.index = index
             next_img_deque.append(img)
             print(" +[LOADED] -", file_name, ("(photo transposed)" if isTransposed else '') )
@@ -292,7 +314,7 @@ if __name__ == "__main__":
     tk_window.focus_force()
 
     # creates/pack label widget onto the root window
-    tk_label = Label(
+    tk_photo_label = Label(
         tk_window,
         anchor=TkinterConstants.CENTER,
         borderwidth="0",
@@ -301,13 +323,17 @@ if __name__ == "__main__":
         fg='#ef0000',
         bg=app_settings.bg_color
         )
-    tk_label.pack(expand=True, fill="both")
+    tk_photo_label.pack(expand=True, fill="both")
 
+    # Create and place photo count label 
     photo_count_label = Label(tk_window, text="0", font=(app_settings.text_font, 15, "bold"), fg="black", bg="white")
     photo_count_label.place(x=10, y=10, anchor="nw")
-
+    
+    # Create labels
     pause_label = Label(tk_window, text="PAUSED", font=(app_settings.text_font, 20, "bold"), fg="red", bg="white")
     speed_change_label = Label(tk_window, text="", font=(app_settings.text_font, 35, "bold"), fg="red", bg="white")
+    slide_settings_label = Label(tk_window, text=str(app_settings), font=(app_settings.text_font, 10, "bold"), fg="black", bg="white")
+    photo_file_name_label = Label(tk_window, text="", font=(app_settings.text_font, 10), fg="black", bg="white")
 
     # Binding keys to an event/method
     tk_window.bind("<Escape>", exit_slideshow)
@@ -317,6 +343,7 @@ if __name__ == "__main__":
     tk_window.bind("<Left>", previous_photo)
     tk_window.bind("<Right>", next_photo)
     tk_window.bind("<f>", fullscreen)
+    tk_window.bind("<s>", show_settings)
     tk_window.bind("<i>", print_info)
 
     schedule_next_photo()
