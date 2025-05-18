@@ -48,8 +48,8 @@ By leveraging the Pi's flexibility and minimal footprint, this setup creates an 
 
 ## Features
 
-Simplicity is the core feature. 😀 <br>
-But for a bit of extra polish, the app includes optional photo transformations, customizable display sequences, and app manual controls
+Simplicity and efficiency is the core feature. 😀 <br>
+But for a bit of extra polish, the app includes optional photo transformations, customizable display sequences, dynamic photo loading, and manual controls
 
 
 ### Buffered Photo Loading
@@ -67,7 +67,7 @@ To ensure smooth and responsive playback, the slideshow uses a dual-buffer syste
 - **Resizing & Cropping:** Fills the entire screen by first resizing and then center-cropping the image. The cropping is a center cropping, meaning it will crop an equal amount from both the left and right (or top/bottom).
 
 > [!NOTE]
-> I've noticed some window computers (mostly laptops) will have their default scale at 125% (found in `Display Settings`). If the scale is not 100%, then the photos will be slightly cut off even when using the `resize` option.
+> I've noticed some window computers (mostly laptops) will have their default scale at 125% (found in `Display Settings`). If the scale is not 100%, then the photos will be slightly cut off
 
 ### Photo Sequence
 
@@ -112,10 +112,8 @@ Current Supported Colors:
 | `ESC` | exit slideshow |
 
 **Notes:**
-
-The slideshow window needs to be focused for these controls to work. Also, the cursor is hidden on the slideshow.
-
-If the slideshow is using randomization, the "previous photo" (←) control will halt once it reaches the first photo in its current loop. This is a design choice and is due to how the randomization was implemented. Read about the **randomized** function below.
+> [!NOTE]
+> If the slideshow is using randomization, the "previous photo" (←) control will halt once it reaches the first photo in its current loop. This is a design choice and is due to how the randomization was implemented. Read about the **randomized** function below.
 
 ## Compatibilities
 
