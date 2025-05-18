@@ -2,7 +2,7 @@ from collections import deque
 import platform
 import random
 from threading import Thread, Lock
-from tkinter import Tk, Label, constants as TkinterConstants
+from tkinter import Tk, Label, constants as TkinterConstants, PhotoImage
 from PIL import Image, ImageTk, ImageGrab, ImageOps
 import settings, helper
 
@@ -308,6 +308,13 @@ if __name__ == "__main__":
 
     # Initialize a display window
     tk_window = Tk()
+
+    try:
+        icon = PhotoImage(file=helper.resource_path("icon.png"))
+        tk_window.iconphoto(False, icon)
+    except Exception:
+        pass
+
     tk_window.title("Simpler SlideShow")
     tk_window.attributes('-fullscreen', isFullscreen)
     tk_window.config(cursor="none")
