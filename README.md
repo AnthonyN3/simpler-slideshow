@@ -8,7 +8,6 @@
   <sub><3</sub>
 </div>
 
-
 <div align="center">
   <h3>
     <a href="#why-i-built-this">
@@ -33,6 +32,7 @@
   </h3>
 </div>
 
+![](docs/app-demo.gif)
 
 ## Why I Built This
 This project originated as a practical solution for my parents to showcase cherished family photos in a dedicated, always-on display. The Raspberry Pi was the ideal hardware choice — energy-efficient, cost-effective, and easily configurable for headless operation.
@@ -98,6 +98,11 @@ Current Supported Colors:
 | `yellow` | 🟡 |
 | `magenta` | 🟣 |
 | `hex value` | 🌈 |
+
+<p align="center">
+    <img src="./docs/cmd-line-options.png">
+	Command Line Options (--help)
+</p>
 
 ## Controls
 | Keys | Description |
