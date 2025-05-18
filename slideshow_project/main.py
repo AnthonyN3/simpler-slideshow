@@ -3,8 +3,9 @@ import platform
 import random
 from threading import Thread, Lock
 from tkinter import Tk, Label, constants as TkinterConstants, PhotoImage
-from PIL import Image, ImageTk, ImageGrab, ImageOps
+from PIL import Image, ImageTk, ImageGrab, ImageOps, ImageDraw, ImageFont
 import settings, helper
+from io import BytesIO
 
 # Constants
 BUFFER_SIZE = 5
@@ -156,7 +157,7 @@ def print_info(event=None):
 # Functions that run in background thread
 # ***************************************
 def preload_next_image():
-    global forward_buffer_index, backward_buffer_index
+    global forward_buffer_index, backward_buffer_index, img_file_names
     try:
         with next_img_deque_lock:
 
@@ -165,8 +166,8 @@ def preload_next_image():
                 forward_buffer_index = 0
                 with prev_img_deque_lock:
                     backward_buffer_index = -(BUFFER_SIZE*2+1) # this is to account for photos already in prev buffer deque
-                if app_settings.isRandomized:
-                     random.shuffle(img_file_names)
+                # ToDo: If there are new photos (or photos removed), fetching the new photo set will affect the total count of the current photo set
+                get_photo_set()
 
             img = Image.open(fp = photo_dir_path + img_file_names[forward_buffer_index], formats=settings.VALID_FORMATS)
 
@@ -184,6 +185,12 @@ def preload_next_image():
             forward_buffer_index = forward_buffer_index + 1
     except Exception as e:
         print(f"Error Loading Next Photo: {e}")
+        err_img = create_error_image(f"ERROR-OPENING-{img_file_names[forward_buffer_index]}")
+        err_img.file_name = img_file_names[forward_buffer_index]
+        err_img.index = forward_buffer_index
+
+        next_img_deque.append(err_img)
+        forward_buffer_index = forward_buffer_index + 1
 
 def preload_previous_image():
     global backward_buffer_index
@@ -206,8 +213,46 @@ def preload_previous_image():
                 backward_buffer_index = backward_buffer_index - 1
     except Exception as e:
         print(f"Error Loading Previous Photo: {e}")
+        err_img = create_error_image(f"ERROR-OPENING-{img_file_names[backward_buffer_index]}")
+        err_img.file_name = img_file_names[backward_buffer_index]
+        err_img.index = backward_buffer_index
+
+        prev_img_deque.append(err_img)
+        backward_buffer_index = backward_buffer_index - 1
 
 # ***************************************
+
+# Quick/Dirty error image. ToDo: fix/refactor this solution
+def create_error_image(text: str) -> Image:
+    # Create a basic square image
+    size = (600, 600)
+    error_img = Image.new("RGB", size, (255, 255, 255))
+
+    # Draw centered text
+    draw = ImageDraw.Draw(error_img)
+    font = ImageFont.load_default()
+
+    # Get text size
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    text_position = ((size[0] - text_width) // 2, (size[1] - text_height) // 2)
+
+    # Draw the text
+    draw.text(text_position, text, fill=(220, 0, 0), font=font)
+
+    buffer = BytesIO()
+    error_img.save(buffer, format="JPEG")
+    buffer.seek(0)
+
+    new_img = Image.open(buffer)
+
+    if app_settings.isCropped:
+        new_img = ImageOps.fit(image=new_img, size=screen_size, method=Image.Resampling.LANCZOS)
+    else:
+        new_img = ImageOps.contain(image=new_img, size=screen_size, method=Image.Resampling.LANCZOS)
+
+    return new_img
 
 def stop_slideshow():
     tk_window.after_cancel(schedule_next_photo_task_id)
@@ -247,6 +292,15 @@ def schedule_next_photo():
         # If next photo deque is empty, the background thread is still loading photos. So we want to schedule another photo or the slide will stop
         tk_window.after_cancel(schedule_next_photo_task_id)
         schedule_next_photo_task_id = tk_window.after(app_settings.delay_ms, schedule_next_photo)
+
+def get_photo_set():
+    global img_file_names
+    
+    img_file_names = helper.get_photo_file_names(photo_dir_path, settings.VALID_FILE_EXT)
+    if app_settings.isRandomized:
+        random.shuffle(img_file_names)
+    else:
+        img_file_names = sorted(img_file_names)
 
 def load_initial_photos():
     global forward_buffer_index
@@ -293,12 +347,7 @@ if __name__ == "__main__":
 
     # Set photo path and get list of photo file names
     photo_dir_path = helper.get_photo_path()
-    img_file_names = helper.get_photo_file_names(photo_dir_path, settings.VALID_FILE_EXT)
-
-    if app_settings.isRandomized:
-        random.shuffle(img_file_names)
-    else:
-        img_file_names = sorted(img_file_names)
+    get_photo_set()
 
     screen_size = ImageGrab.grab().size
     load_initial_photos()
