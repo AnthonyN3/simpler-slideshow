@@ -60,3 +60,8 @@ def get_photo_file_names(path: str, file_ext: tuple):
         print(" [ERROR FETCHING PHOTO FILE NAMES] -", e)
         print(" Terminating Program...")
         sys.exit()
+
+def resource_path(filename):
+    if getattr(sys, 'frozen', False):
+        return os.path.join(sys._MEIPASS, filename)
+    return filename
